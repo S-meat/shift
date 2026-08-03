@@ -4,6 +4,7 @@
 var SHIFT_APP = {
   spreadsheetId: '1_jq2tl3Wfx61p-J3EvfeHOQwIh1B5Qo5KP8UCCfPnVQ',
   targetSheet: '2026年9月',
+  ownershipSheet: '希望休アプリ管理',
   leaveMark: '希', paidMark: '有',
   leaveColor: '#fff2cc', paidColor: '#f4cccc', timeColor: '#cfe2f3'
 };
@@ -56,7 +57,9 @@ function submitShiftAppRequest(payload) {
 
     var keys = Object.keys(requests);
     if (!keys.length) throw new Error('希望休・有給・時間指定のいずれかを入力してください。');
-    var results = [];
+    var cleared = clearPreviousShiftAppRequests_(sheet, row, payload.name, dates);
+    var results = cleared ? ['以前の申請 ' + cleared + '件を新しい内容に置き換え'] : [];
+    var written = [];
     keys.sort().forEach(function(key) {
       var item = requests[key];
       var cell = sheet.getRange(row, dates.columns[key]);
@@ -65,14 +68,86 @@ function submitShiftAppRequest(payload) {
       else {
         cell.setValue(item.value).setBackground(item.color);
         results.push(item.label + '：' + item.value + ' を反映');
+        written.push({ dateKey: key, label: item.label, cell: cell.getA1Notation(), value: item.value });
       }
     });
 
+    recordShiftAppOwnership_(sheet.getName(), payload.name, written);
     appendShiftAppLog_(payload, sheet.getName(), results);
     return { ok: true, message: results.join('\n') };
   } finally {
     lock.releaseLock();
   }
+}
+
+function clearPreviousShiftAppRequests_(sheet, memberRow, name, dates) {
+  var ss = SpreadsheetApp.openById(SHIFT_APP.spreadsheetId);
+  var owner = ss.getSheetByName(SHIFT_APP.ownershipSheet);
+  var normalizedName = normalizeShiftAppName_(name);
+  var cleared = 0, handled = {};
+
+  if (owner && owner.getLastRow() >= 2) {
+    var values = owner.getRange(2, 1, owner.getLastRow() - 1, 7).getDisplayValues();
+    var statuses = owner.getRange(2, 7, values.length, 1).getValues();
+    values.forEach(function(row, index) {
+      if (row[1] !== sheet.getName() || normalizeShiftAppName_(row[2]) !== normalizedName || row[6] !== '有効') return;
+      var address = row[4], expected = row[5];
+      try {
+        var cell = sheet.getRange(address);
+        handled[address] = true;
+        if (cell.getRow() === memberRow && cell.getDisplayValue() === expected) {
+          cell.clearContent().setBackground(null);
+          cleared++;
+        }
+      } catch (error) {}
+      statuses[index][0] = '置換済み';
+    });
+    owner.getRange(2, 7, statuses.length, 1).setValues(statuses);
+  }
+
+  // 管理シート導入前にこのアプリから書き込まれた値も、提出ログを根拠に安全に置き換える。
+  var log = ss.getSheetByName('希望休提出ログ');
+  if (log && log.getLastRow() >= 2) {
+    var rows = log.getRange(2, 1, log.getLastRow() - 1, 7).getDisplayValues();
+    var legacy = {};
+    rows.forEach(function(row) {
+      if (row[1] !== sheet.getName() || normalizeShiftAppName_(row[2]) !== normalizedName) return;
+      var result = row[6] || '';
+      dates.labels.forEach(function(label) {
+        var marker = label + '：', start = result.indexOf(marker);
+        if (start < 0) return;
+        var tail = result.substring(start + marker.length), end = tail.indexOf(' を反映');
+        if (end >= 0) legacy[shiftAppDateKey_(label)] = tail.substring(0, end);
+      });
+    });
+    Object.keys(legacy).forEach(function(key) {
+      var column = dates.columns[key];
+      if (!column) return;
+      var cell = sheet.getRange(memberRow, column), address = cell.getA1Notation();
+      if (!handled[address] && cell.getDisplayValue() === legacy[key]) {
+        cell.clearContent().setBackground(null);
+        cleared++;
+      }
+    });
+  }
+  return cleared;
+}
+
+function recordShiftAppOwnership_(targetSheet, name, written) {
+  if (!written.length) return;
+  var ss = SpreadsheetApp.openById(SHIFT_APP.spreadsheetId);
+  var owner = ss.getSheetByName(SHIFT_APP.ownershipSheet);
+  if (!owner) {
+    owner = ss.insertSheet(SHIFT_APP.ownershipSheet);
+    owner.appendRow(['更新日時','対象タブ','氏名','日付','セル','記入値','状態']);
+    owner.setFrozenRows(1);
+    owner.hideSheet();
+  }
+  var now = new Date();
+  var rows = written.map(function(item) {
+    return [now, targetSheet, name, item.label, item.cell, item.value, '有効'];
+  });
+  owner.getRange(owner.getLastRow() + 1, 1, rows.length, 7).setValues(rows);
 }
 
 function getShiftAppSheet_() {
