@@ -26,7 +26,7 @@
 
 - `index.html`: GitHub Pagesの公開入口。Apps Script版を全画面表示する。
 - `manual.html`: 操作方法、QRコード、Googleアカウント要否をまとめた配布用マニュアル。
-- `output/pdf/shift-app-employee-guide.pdf`: A4・3ページの印刷配布用ガイド。
+- `output/pdf/shift-app-employee-guide.pdf`: A4印刷用の従業員向けガイド。
 - `assets/saiboku-logo.png`: 元画像を無加工・無圧縮で配置。
 - `gas/`: Apps Script側のソース控え。
 - `tests/app-api.test.js`: 再提出時の置換と有給反映の自動テスト。

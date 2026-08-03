@@ -43,9 +43,14 @@
     .url{overflow-wrap:anywhere;font-size:13px;color:var(--sub)}
     .note{padding:18px;border:1px solid var(--line);background:var(--soft)}
     .note strong{display:block;margin-bottom:4px}
+    .devices{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .device{border:1px solid var(--line);padding:20px}
+    .device ol{margin:10px 0 0;padding-left:1.4em}
+    .device li{margin:6px 0}
     .small{font-size:13px;color:var(--sub)}
     footer{border-top:1px solid var(--line);padding:22px;text-align:center;color:var(--sub);font-size:12px}
-    @media(max-width:620px){header{padding:13px 16px}header img{height:28px}main{padding-top:34px}.choices{grid-template-columns:1fr}.choice{min-height:0}.qr-wrap{grid-template-columns:1fr;justify-items:center;text-align:center}.step{grid-template-columns:42px 1fr;gap:10px}}
+    @media(max-width:620px){header{padding:13px 16px}header img{height:28px}main{padding-top:34px}.choices,.devices{grid-template-columns:1fr}.choice{min-height:0}.qr-wrap{grid-template-columns:1fr;justify-items:center;text-align:center}.step{grid-template-columns:42px 1fr;gap:10px}}
+    @page{size:A4;margin:12mm}
     @media print{header a,.actions{display:none}main{padding:24px 0;width:92%}section{break-inside:avoid;margin-top:32px}.qr-wrap{grid-template-columns:180px 1fr}.qrcode{width:170px;height:170px}footer{padding:10px}}
   </style>
 </head>
@@ -86,8 +91,8 @@
         <article class="choice paid"><span class="mark">有</span><h3>有給</h3><p>日付をすばやく2回タップ。ポップアップの「有給」を選び、保存します。シフト表には「有」と反映されます。</p></article>
       </div>
       <div class="note" style="margin-top:18px">
-        <strong>時間をまとめて設定できます</strong>
-        「毎週同じ曜日」は、毎週土曜日など同じ曜日へ一括設定します。「期間をまとめて」は、夏休み期間など開始日から終了日まで同じ時間を一括設定します。
+        <strong>希望休や時間をまとめて設定できます</strong>
+        「毎週同じ曜日」は、曜日を選んで「希望休」または「時間指定」をまとめて設定できます。「期間をまとめて」は、夏休み期間など開始日から終了日まで同じ時間を一括設定します。
       </div>
     </section>
 
@@ -117,7 +122,33 @@
     </section>
 
     <section>
-      <div class="section-head"><span class="section-no">05</span><h2>シフトを見る</h2></div>
+      <div class="section-head"><span class="section-no">05</span><h2>ホーム画面に追加する</h2></div>
+      <p class="small" style="margin-bottom:14px">最初に一度だけ設定すると、次回からホーム画面のアイコンをタップしてアプリを開けます。</p>
+      <div class="devices">
+        <article class="device">
+          <h3>iPhone（Safari）</h3>
+          <ol>
+            <li>Safariで希望休申請アプリを開きます。</li>
+            <li>画面の共有ボタン（四角から上向き矢印）をタップします。</li>
+            <li>メニューを下へ動かし、「ホーム画面に追加」をタップします。</li>
+            <li>名前を確認し、右上の「追加」をタップします。</li>
+          </ol>
+        </article>
+        <article class="device">
+          <h3>Android（Chrome）</h3>
+          <ol>
+            <li>Chromeで希望休申請アプリを開きます。</li>
+            <li>画面右上の「︙」をタップします。</li>
+            <li>「ホーム画面に追加」→「ショートカットを作成」をタップします。</li>
+            <li>名前を確認し、「追加」をタップします。</li>
+          </ol>
+        </article>
+      </div>
+      <div class="note" style="margin-top:14px"><strong>表示が少し違う場合</strong>機種やバージョンによって「インストール」や「アプリをインストール」と表示されることがあります。その場合も画面の案内に沿って追加してください。</div>
+    </section>
+
+    <section>
+      <div class="section-head"><span class="section-no">06</span><h2>シフトを見る</h2></div>
       <div class="qr-wrap">
         <div id="sheetQr" class="qrcode" aria-label="シフト表のQRコード"></div>
         <div><h3>シフト表（閲覧用）</h3><p>パート・アルバイトの方は閲覧のみです。編集できるのは管理者が指定したメンバーだけです。</p><a class="url" href="https://docs.google.com/spreadsheets/d/1_jq2tl3Wfx61p-J3EvfeHOQwIh1B5Qo5KP8UCCfPnVQ/edit">シフト表を開く</a></div>
@@ -125,7 +156,7 @@
     </section>
 
     <section>
-      <div class="section-head"><span class="section-no">06</span><h2>Googleアカウントについて</h2></div>
+      <div class="section-head"><span class="section-no">07</span><h2>Googleアカウントについて</h2></div>
       <div class="note">
         <strong>希望休申請だけなら、通常は作成不要です。</strong>
         シフト表の閲覧でGoogleアカウントが必要な場合は、<a href="https://accounts.google.com/signup">Googleアカウント作成ページ</a>を開き、「アカウントを作成」→「自分用」の順で進めます。作成したメールアドレスを管理者へ伝え、閲覧権限を付けてもらってください。会社指定のアカウントがある場合は、新しく作らず、そのアカウントを使います。
