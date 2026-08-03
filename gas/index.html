@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<style>
+:root{--ink:#151515;--sub:#777;--line:#dedede;--bg:#fff;--blue:#315f87;--red:#a8463d;--pale:#f5f5f3}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;font-size:15px}
+header{position:sticky;top:0;z-index:10;height:64px;background:#fff;border-bottom:1px solid var(--ink);display:flex;align-items:center;padding:0 16px}.brand{display:flex;align-items:baseline;gap:10px}.brand img{display:block;width:auto;height:30px}.brand span{font-size:13px;color:var(--sub)}#month{margin-left:auto;color:var(--sub);font-size:13px}
+main{max-width:680px;margin:auto;padding:20px 14px 48px}.label{font-size:13px;font-weight:700;margin:0 0 7px}
+select,textarea,input,button{font:inherit}select,textarea,input[type=time]{width:100%;border:1px solid #bbb;border-radius:4px;padding:12px;background:#fff}
+.section{margin-bottom:28px}.section-title{display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--ink);padding-bottom:7px;margin-bottom:15px}.section-title b{font-size:11px;letter-spacing:.12em}.section-title span{font-size:16px;font-weight:700;letter-spacing:.05em}.deadline{font-size:13px;color:var(--sub);margin:8px 0 0}
+.week,.calendar{display:grid;grid-template-columns:repeat(7,1fr)}.week div{text-align:center;font-size:12px;color:var(--sub);padding:8px 0}.week div:first-child{color:#b23b32}.week div:last-child{color:#315f87}
+.calendar{border-top:1px solid var(--line);border-left:1px solid var(--line)}.blank,.day{min-height:64px;border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff;position:relative;padding:7px 5px;text-align:left;cursor:pointer}
+.day:active{background:#eee}.day .num{font-weight:600}.day .mark{position:absolute;left:5px;right:5px;bottom:5px;text-align:center;border-radius:3px;padding:3px 1px;font-size:11px;font-weight:700}
+.day.leave{background:#ecece8}.day.leave .mark{background:#222;color:#fff}.day.time{background:#eef5fb}.day.time .mark{background:var(--blue);color:#fff}.day.paid{background:#fff0ee}.day.paid .mark{background:var(--red);color:#fff}
+.legend{display:flex;gap:18px;margin-top:12px;font-size:12px;color:var(--sub)}.legend span:before{content:'';display:inline-block;width:11px;height:11px;margin-right:5px;vertical-align:-1px;border-radius:2px}.legend .l1:before{background:#222}.legend .l2:before{background:var(--blue)}.legend .l3:before{background:var(--red)}
+.guide{font-size:12px;color:var(--sub);line-height:1.6;margin-top:10px}.send{width:100%;background:#181818;color:#fff;border:0;border-radius:4px;padding:15px;font-weight:700;letter-spacing:.05em}.send:disabled{opacity:.5}
+#message{display:none;white-space:pre-wrap;padding:14px;margin:16px 0;border:1px solid var(--line);line-height:1.6}.error{color:#a52d25}
+.overlay{display:none;position:fixed;z-index:30;inset:0;background:#0008;align-items:center;justify-content:center;padding:16px}.modal{width:min(430px,100%);background:#fff;border-radius:8px;padding:20px}.modal h2{font-size:18px;margin:0 0 16px}.segments{display:grid;grid-template-columns:1fr 1fr;border:1px solid #aaa;border-radius:5px;overflow:hidden;margin-bottom:16px}.segments button{border:0;background:#fff;padding:12px;font-weight:700}.segments button+button{border-left:1px solid #aaa}.segments button.active{background:#202020;color:#fff}.time-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.time-row label{font-size:12px;font-weight:700}.modal-note{font-size:13px;color:var(--sub);line-height:1.6}.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}.modal-actions button{padding:12px;border-radius:4px;border:1px solid #999;background:#fff}.modal-actions .save{background:#181818;color:#fff;border-color:#181818}.remove{width:100%;margin-top:8px;padding:11px;border:0;background:none;color:#9b322a;text-decoration:underline}
+@media(max-width:430px){.blank,.day{min-height:58px}.day .mark{font-size:10px}.modal{align-self:flex-end;margin-bottom:0;border-radius:12px 12px 0 0}.overlay{padding:0;align-items:flex-end}}
+</style></head><body>
+<header><div class="brand"><img src="https://s-meat.github.io/shift/assets/saiboku-logo.png" alt="SAIBOKU"><span>製造部 希望休申請</span></div><div id="month">読み込み中</div></header>
+<main>
+<form id="form">
+<div class="section"><div class="section-title"><b>01</b><span>基本情報</span></div><p class="label">氏名</p><select id="name" required><option value="">選択してください</option></select><p class="deadline">希望する日をカレンダーから選択してください</p></div>
+<div class="section"><div class="section-title"><b>02</b><span>希望日</span></div><div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div><div id="calendar" class="calendar"></div>
+<div class="legend"><span class="l1">希望休</span><span class="l2">時間指定</span><span class="l3">有給</span></div>
+<p class="guide">日付を1回タップ＝希望休　／　すばやく2回タップ＝時間指定・有給<br>時間指定・有給の日を1回タップすると変更・解除できます。</p></div>
+<div class="section"><div class="section-title"><b>03</b><span>備考・提出</span></div><p class="label">備考（任意）</p><textarea id="note" rows="3" placeholder="連絡事項があれば入力してください"></textarea></div>
+<button id="send" class="send" type="submit">この内容で提出する</button>
+</form><div id="message"></div>
+</main>
+<div id="overlay" class="overlay" role="dialog" aria-modal="true">
+<div class="modal"><h2 id="modalTitle">時間指定</h2>
+<div class="segments"><button id="timeMode" type="button">時間指定</button><button id="paidMode" type="button">有給</button></div>
+<div id="timeFields"><div class="time-row"><label>開始時刻<input id="start" type="time"></label><label>終了時刻<input id="end" type="time"></label></div><p class="modal-note">開始または終了のどちらかだけでも入力できます。</p></div>
+<p id="paidHelp" class="modal-note" style="display:none">シフト表には「有」と記入されます。</p>
+<div id="modalError" class="error"></div>
+<div class="modal-actions"><button id="cancel" type="button">キャンセル</button><button id="save" class="save" type="button">保存</button></div>
+<button id="remove" class="remove" type="button">この日の指定を解除</button>
+</div></div>
+<script>
+var data=null,selections={},buttons={},tapTimes={},tapTimers={},modalDate='',modalMode='time';
+function id(x){return document.getElementById(x)}
+function option(select,text,value){var o=document.createElement('option');o.textContent=text;o.value=value===undefined?text:value;select.appendChild(o)}
+function weekday(label){var c=label.charAt(label.indexOf('(')+1);return ['日','月','火','水','木','金','土'].indexOf(c)}
+function dayNumber(label){return label.split('/')[1].split('(')[0]}
+function init(result){
+ data=result;id('month').textContent=result.period+'分';result.members.forEach(function(n){option(id('name'),n)});
+ var cal=id('calendar'),offset=weekday(result.dates[0]);for(var i=0;i<offset;i++){var b=document.createElement('div');b.className='blank';cal.appendChild(b)}
+ result.dates.forEach(function(label){var btn=document.createElement('button');btn.type='button';btn.className='day';btn.setAttribute('aria-label',label);btn.innerHTML='<span class="num">'+dayNumber(label)+'</span><span class="mark"></span>';btn.addEventListener('click',function(){tap(label)});btn.addEventListener('dblclick',function(e){e.preventDefault()});buttons[label]=btn;cal.appendChild(btn)})
+}
+function tap(label){
+ var current=selections[label];if(current&&(current.kind==='time'||current.kind==='paid')){openModal(label);return}
+ var now=Date.now();if(now-(tapTimes[label]||0)<480){clearTimeout(tapTimers[label]);tapTimes[label]=0;openModal(label);return}
+ tapTimes[label]=now;tapTimers[label]=setTimeout(function(){if(selections[label])delete selections[label];else selections[label]={kind:'leave'};paint(label);tapTimes[label]=0},480)
+}
+function paint(label){var btn=buttons[label],s=selections[label];btn.className='day';btn.querySelector('.mark').textContent='';if(!s)return;btn.classList.add(s.kind);btn.querySelector('.mark').textContent=s.kind==='leave'?'希':(s.kind==='paid'?'有':'時間')}
+function openModal(label){modalDate=label;var s=selections[label];modalMode=s&&s.kind==='paid'?'paid':'time';id('start').value=s&&s.kind==='time'?(s.start||''):'';id('end').value=s&&s.kind==='time'?(s.end||''):'';id('modalTitle').textContent=label+' の指定';id('modalError').textContent='';setMode(modalMode);id('overlay').style.display='flex'}
+function setMode(mode){modalMode=mode;id('timeMode').className=mode==='time'?'active':'';id('paidMode').className=mode==='paid'?'active':'';id('timeFields').style.display=mode==='time'?'block':'none';id('paidHelp').style.display=mode==='paid'?'block':'none'}
+function closeModal(){id('overlay').style.display='none'}
+id('timeMode').onclick=function(){setMode('time')};id('paidMode').onclick=function(){setMode('paid')};id('cancel').onclick=closeModal;
+id('save').onclick=function(){if(modalMode==='paid'){selections[modalDate]={kind:'paid'}}else{var a=id('start').value,b=id('end').value;if(!a&&!b){id('modalError').textContent='開始または終了時刻を入力してください。';return}selections[modalDate]={kind:'time',start:a,end:b}}paint(modalDate);closeModal()};
+id('remove').onclick=function(){delete selections[modalDate];paint(modalDate);closeModal()};
+function message(text,error){var box=id('message');box.style.display='block';box.className=error?'error':'';box.textContent=text;window.scrollTo(0,document.body.scrollHeight)}
+function fail(error){message('エラー：'+(error.message||error),true);id('send').disabled=false;id('send').textContent='この内容で提出する'}
+id('form').onsubmit=function(e){e.preventDefault();var name=id('name').value;if(!name){message('氏名を選択してください。',true);return}var leaves=[],requests=[];Object.keys(selections).forEach(function(date){var s=selections[date];if(s.kind==='leave')leaves.push(date);else requests.push({date:date,type:s.kind==='paid'?'paid':'time',start:s.start||'',end:s.end||''})});if(!leaves.length&&!requests.length){message('希望休・時間指定・有給を選択してください。',true);return}id('send').disabled=true;id('send').textContent='送信中…';google.script.run.withSuccessHandler(function(r){message('送信しました。 '+r.message,false);selections={};Object.keys(buttons).forEach(paint);id('form').reset();id('send').disabled=false;id('send').textContent='この内容で提出する'}).withFailureHandler(fail).submitShiftAppRequest({name:name,leaveDates:leaves,timeRequests:requests,note:id('note').value})};
+google.script.run.withSuccessHandler(init).withFailureHandler(fail).getShiftAppData();
+</script></body></html>
