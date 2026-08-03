@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets" / "app-icon-source.jpg"
 
 
-def create_icon(size: int, filename: str, content_ratio: float = 0.86) -> None:
+def create_icon(size: int, filename: str, content_ratio: float = 1.0) -> None:
     source = Image.open(SOURCE).convert("RGB")
     limit = round(size * content_ratio)
     source.thumbnail((limit, limit), Image.Resampling.LANCZOS)
