@@ -13,6 +13,12 @@ var SHIFT_APP = {
   leaveColor: '#fff2cc', paidColor: '#f4cccc', timeColor: '#cfe2f3'
 };
 
+var SHIFT_APP_SLACK = {
+  webhookProperty: 'SHIFT_APP_SLACK_WEBHOOK_URL',
+  channelId: 'C03D1D78XDF',
+  channelName: '#888-シフト確認_休み希望提出'
+};
+
 function getShiftAppData(targetSheet) {
   var sheet = getShiftAppSheet_(targetSheet);
   var dates = getShiftAppDates_(sheet);
@@ -80,8 +86,13 @@ function submitShiftAppRequest(payload) {
     });
 
     recordShiftAppOwnership_(sheet.getName(), payload.name, written);
-    appendShiftAppLog_(payload, sheet.getName(), results);
-    return { ok: true, message: results.join('\n') };
+    var slackNotification = notifyShiftSubmissionToSlack_(payload.name, sheet.getName());
+    appendShiftAppLog_(payload, sheet.getName(), results, slackNotification.status);
+    return {
+      ok: true,
+      message: results.join('\n'),
+      slackNotification: slackNotification.status
+    };
   } finally {
     lock.releaseLock();
   }
@@ -350,13 +361,47 @@ function normalizeShiftAppTime_(value) {
   return p.length === 2 && p[0] !== '' && p[1] !== '' ? Number(p[0]) + ':' + p[1] : '';
 }
 
-function appendShiftAppLog_(payload, targetSheet, results) {
+function notifyShiftSubmissionToSlack_(name, targetSheet) {
+  var month = String(targetSheet || '').match(/年(\d{1,2})月/);
+  var monthLabel = month ? Number(month[1]) + '月' : String(targetSheet || '対象月');
+  return sendShiftAppSlackMessage_(String(name || '').trim() + 'さんが、' + monthLabel + 'のシフトを提出しました');
+}
+
+function sendShiftAppSlackMessage_(text) {
+  try {
+    var webhookUrl = String(PropertiesService.getScriptProperties().getProperty(SHIFT_APP_SLACK.webhookProperty) || '').trim();
+    if (!webhookUrl) return { ok: false, status: '未設定' };
+    if (webhookUrl.indexOf('https://hooks.slack.com/services/') !== 0) {
+      return { ok: false, status: '設定エラー（Webhook URL）' };
+    }
+    var response = UrlFetchApp.fetch(webhookUrl, {
+      method: 'post',
+      contentType: 'application/json; charset=utf-8',
+      payload: JSON.stringify({ text: text }),
+      muteHttpExceptions: true
+    });
+    var code = response.getResponseCode();
+    if (code < 200 || code >= 300) return { ok: false, status: '送信失敗（HTTP ' + code + '）' };
+    return { ok: true, status: '送信済み' };
+  } catch (error) {
+    console.error('Slack notification failed: ' + (error && error.message ? error.message : error));
+    return { ok: false, status: '送信失敗' };
+  }
+}
+
+function testShiftAppSlackNotification_() {
+  return sendShiftAppSlackMessage_('【動作確認】希望休申請アプリからSlack通知を送信できました。');
+}
+
+function appendShiftAppLog_(payload, targetSheet, results, slackStatus) {
   var ss = SpreadsheetApp.openById(SHIFT_APP.spreadsheetId);
   var log = ss.getSheetByName('希望休提出ログ');
   if (!log) {
     log = ss.insertSheet('希望休提出ログ');
-    log.appendRow(['提出日時','対象タブ','氏名','希望日','時間指定','備考','反映結果']);
+    log.appendRow(['提出日時','対象タブ','氏名','希望日','時間指定','備考','反映結果','Slack通知']);
     log.setFrozenRows(1);
+  } else if (!log.getRange(1, 8).getDisplayValue()) {
+    log.getRange(1, 8).setValue('Slack通知');
   }
   var times = (payload.timeRequests || []).map(function(x) {
     if (!x || !x.date) return '';
@@ -364,6 +409,6 @@ function appendShiftAppLog_(payload, targetSheet, results) {
   }).filter(String).join(', ');
   log.appendRow([
     new Date(), targetSheet, payload.name, (payload.leaveDates || []).join(', '),
-    times, payload.note || '', results.join(' / ')
+    times, payload.note || '', results.join(' / '), slackStatus || ''
   ]);
 }

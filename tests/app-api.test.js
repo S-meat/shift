@@ -82,6 +82,7 @@ class TableSheet {
 }
 
 const target = new TargetSheet();
+let lastSlackRequest = null;
 const spreadsheet = {
   sheets: {},
   getSheetByName(name) { return this.sheets[name] || null; },
@@ -92,7 +93,18 @@ const context = {
   console,
   Date,
   SpreadsheetApp: { openById: () => spreadsheet },
-  LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) }
+  LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
+  PropertiesService: {
+    getScriptProperties: () => ({
+      getProperty: key => key === 'SHIFT_APP_SLACK_WEBHOOK_URL' ? 'https://hooks.slack.com/services/test/value' : ''
+    })
+  },
+  UrlFetchApp: {
+    fetch: (url, options) => {
+      lastSlackRequest = { url, options };
+      return { getResponseCode: () => 200 };
+    }
+  }
 };
 vm.createContext(context);
 vm.runInContext(fs.readFileSync('gas/AppApi.gs', 'utf8'), context);
@@ -136,6 +148,11 @@ context.submitShiftAppRequest({
   targetSheet: '2027年2月', name: 'テスト 太郎', leaveDates: ['9/1(火)'], timeRequests: []
 });
 assert.equal(requestedTargetSheet, '2027年2月', '選択した月が送信先へ渡ること');
+assert.equal(
+  JSON.parse(lastSlackRequest.options.payload).text,
+  'テスト 太郎さんが、2月のシフトを提出しました',
+  '提出者と対象月をSlack通知へ渡すこと'
+);
 assert.equal(context.SHIFT_APP.monthSheets.length, 7, '2026年9月から2027年3月まで設定されていること');
 assert.equal(context.SHIFT_APP.memberRows.length, 39, '氏名欄の39枠を維持すること');
 assert.deepEqual(

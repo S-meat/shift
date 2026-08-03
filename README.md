@@ -28,6 +28,7 @@
 - `manual.html`: 操作方法、QRコード、Googleアカウント要否をまとめた配布用マニュアル。
 - `manifest.webmanifest`: iPhone・Androidのホーム画面アイコンとアプリ表示設定。
 - `output/pdf/shift-app-employee-guide.pdf`: A4印刷用の従業員向けガイド。
+- Slack通知はApps Scriptのスクリプトプロパティ `SHIFT_APP_SLACK_WEBHOOK_URL` に、`#888-シフト確認_休み希望提出` 用のIncoming Webhook URLを設定します。
 - `assets/saiboku-logo.png`: 元画像を無加工・無圧縮で配置。
 - `gas/`: Apps Script側のソース控え。
 - `tests/app-api.test.js`: 再提出時の置換と有給反映の自動テスト。
