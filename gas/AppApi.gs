@@ -1,22 +1,29 @@
 /**
- * 希望休申請WebアプリのAPI（フォーム不要）
+ * 製造部 1課 ミート 希望休申請WebアプリのAPI（フォーム不要）
  */
 var SHIFT_APP = {
   spreadsheetId: '1_jq2tl3Wfx61p-J3EvfeHOQwIh1B5Qo5KP8UCCfPnVQ',
-  targetSheet: '2026年9月',
+  title: '製造部　1課　ミート　希望休申請',
+  defaultSheet: '2026年9月',
+  monthSheets: ['2026年9月', '2026年10月', '2026年11月', '2026年12月', '2027年1月', '2027年2月', '2027年3月'],
+  memberSheet: '希望休メンバー',
   ownershipSheet: '希望休アプリ管理',
+  memberRows: [8,9,10,11,12,13,14,15,16,17,19,20,21,22,28,29,30,31,32,33,34,36,37,38,39,40,41,44,45,46,47,48,49,51,52,53,55,56,57],
   leaveMark: '希', paidMark: '有',
   leaveColor: '#fff2cc', paidColor: '#f4cccc', timeColor: '#cfe2f3'
 };
 
-function getShiftAppData() {
-  var sheet = getShiftAppSheet_();
+function getShiftAppData(targetSheet) {
+  var sheet = getShiftAppSheet_(targetSheet);
   var dates = getShiftAppDates_(sheet);
   return {
-    title: '希望休申請',
+    title: SHIFT_APP.title,
     targetSheet: sheet.getName(),
     period: dates.period,
-    members: getShiftAppMembers_(sheet),
+    months: SHIFT_APP.monthSheets.map(function(name) {
+      return { value: name, label: name.replace('年', '年').replace('月', '月') };
+    }),
+    members: getShiftAppMembers_(),
     dates: dates.labels
   };
 }
@@ -26,10 +33,10 @@ function submitShiftAppRequest(payload) {
   lock.waitLock(30000);
   try {
     if (!payload || !payload.name) throw new Error('氏名を選択してください。');
-    var sheet = getShiftAppSheet_();
+    var sheet = getShiftAppSheet_(payload.targetSheet);
     var dates = getShiftAppDates_(sheet);
-    var row = findShiftAppMemberRow_(sheet, payload.name);
-    if (!row) throw new Error('シフト表に氏名「' + payload.name + '」が見つかりません。');
+    var row = findShiftAppMemberRow_(payload.name);
+    if (!row) throw new Error('登録済みの氏名「' + payload.name + '」が見つかりません。');
     var requests = {};
 
     (payload.leaveDates || []).forEach(function(label) {
@@ -80,6 +87,149 @@ function submitShiftAppRequest(payload) {
   }
 }
 
+function verifyShiftAppAdmin(pin) {
+  assertShiftAppAdmin_(pin);
+  return getShiftAppAdminData_();
+}
+
+function saveShiftAppMembers(pin, names) {
+  assertShiftAppAdmin_(pin);
+  var cleaned = sanitizeShiftAppMembers_(names);
+  if (!cleaned.length) throw new Error('氏名を1名以上登録してください。');
+  if (cleaned.length > SHIFT_APP.memberRows.length) {
+    throw new Error('登録できるのは最大' + SHIFT_APP.memberRows.length + '名です。');
+  }
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var oldNames = getShiftAppMembers_();
+    writeShiftAppMemberSheet_(cleaned);
+    SHIFT_APP.monthSheets.forEach(function(sheetName) {
+      var sheet = getShiftAppSheet_(sheetName);
+      syncShiftAppRosterToSheet_(sheet, oldNames, cleaned);
+    });
+    updateShiftAppOwnershipRows_(cleaned);
+    return getShiftAppAdminData_();
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getShiftAppAdminData_() {
+  return {
+    ok: true,
+    members: getShiftAppMembers_(),
+    capacity: SHIFT_APP.memberRows.length,
+    message: '氏名一覧を読み込みました。'
+  };
+}
+
+function assertShiftAppAdmin_(pin) {
+  var sheet = ensureShiftAppMemberSheet_();
+  var expected = String(PropertiesService.getScriptProperties().getProperty('SHIFT_APP_ADMIN_PIN') || sheet.getRange('F2').getDisplayValue() || '').trim();
+  if (!expected || String(pin || '').trim() !== expected) throw new Error('管理用暗証番号が違います。');
+}
+
+function sanitizeShiftAppMembers_(names) {
+  var seen = {}, result = [];
+  (names || []).forEach(function(value) {
+    var name = String(value || '').trim();
+    var key = normalizeShiftAppName_(name);
+    if (!key || seen[key]) return;
+    seen[key] = true;
+    result.push(name);
+  });
+  return result;
+}
+
+function ensureShiftAppMemberSheet_() {
+  var ss = SpreadsheetApp.openById(SHIFT_APP.spreadsheetId);
+  var sheet = ss.getSheetByName(SHIFT_APP.memberSheet);
+  if (sheet) return sheet;
+  sheet = ss.insertSheet(SHIFT_APP.memberSheet);
+  sheet.getRange('A1:C1').setValues([['順番', '氏名', 'シフト表の行']]);
+  sheet.getRange('F1').setValue('管理用暗証番号');
+  var source = getShiftAppSheet_(SHIFT_APP.defaultSheet);
+  var names = SHIFT_APP.memberRows.map(function(row) {
+    return source.getRange(row, 3).getDisplayValue().trim();
+  }).filter(String);
+  writeShiftAppMemberSheet_(names, sheet);
+  sheet.setFrozenRows(1);
+  sheet.autoResizeColumns(1, 3);
+  return sheet;
+}
+
+function writeShiftAppMemberSheet_(names, existingSheet) {
+  var sheet = existingSheet || ensureShiftAppMemberSheet_();
+  var height = Math.max(SHIFT_APP.memberRows.length, sheet.getLastRow() - 1, 1);
+  sheet.getRange(2, 1, height, 3).clearContent();
+  if (!names.length) return;
+  var rows = names.map(function(name, index) {
+    return [index + 1, name, SHIFT_APP.memberRows[index]];
+  });
+  sheet.getRange(2, 1, rows.length, 3).setValues(rows);
+}
+
+function getShiftAppMembers_() {
+  var sheet = ensureShiftAppMemberSheet_();
+  if (sheet.getLastRow() < 2) return [];
+  return sanitizeShiftAppMembers_(sheet.getRange(2, 2, sheet.getLastRow() - 1, 1).getDisplayValues().map(function(row) { return row[0]; }));
+}
+
+function findShiftAppMemberRow_(name) {
+  var target = normalizeShiftAppName_(name);
+  var members = getShiftAppMembers_();
+  for (var i = 0; i < members.length; i++) {
+    if (normalizeShiftAppName_(members[i]) === target) return SHIFT_APP.memberRows[i];
+  }
+  return 0;
+}
+
+function syncShiftAppRosterToSheet_(sheet, oldNames, newNames) {
+  var startColumn = 5;
+  var width = 31;
+  var saved = {};
+  oldNames.forEach(function(name, index) {
+    var row = SHIFT_APP.memberRows[index];
+    if (!row) return;
+    var range = sheet.getRange(row, startColumn, 1, width);
+    var values = range.getValues()[0];
+    var formulas = range.getFormulas()[0];
+    saved[normalizeShiftAppName_(name)] = {
+      values: values.map(function(value, column) { return formulas[column] || value; }),
+      backgrounds: range.getBackgrounds()[0]
+    };
+  });
+
+  SHIFT_APP.memberRows.forEach(function(row, index) {
+    var name = newNames[index] || '';
+    sheet.getRange(row, 3, 1, 2).setValues([[name, name]]);
+    var range = sheet.getRange(row, startColumn, 1, width);
+    range.clearContent().setBackground(null);
+    var prior = saved[normalizeShiftAppName_(name)];
+    if (name && prior) {
+      range.setValues([prior.values]);
+      range.setBackgrounds([prior.backgrounds]);
+    }
+  });
+}
+
+function updateShiftAppOwnershipRows_(members) {
+  var ss = SpreadsheetApp.openById(SHIFT_APP.spreadsheetId);
+  var owner = ss.getSheetByName(SHIFT_APP.ownershipSheet);
+  if (!owner || owner.getLastRow() < 2) return;
+  var values = owner.getRange(2, 1, owner.getLastRow() - 1, 7).getValues();
+  var rowByName = {};
+  members.forEach(function(name, index) { rowByName[normalizeShiftAppName_(name)] = SHIFT_APP.memberRows[index]; });
+  values.forEach(function(row) {
+    if (row[6] !== '有効') return;
+    var newRow = rowByName[normalizeShiftAppName_(row[2])];
+    if (!newRow) { row[6] = '氏名削除済み'; return; }
+    row[4] = String(row[4] || '').replace(/\d+$/, String(newRow));
+  });
+  owner.getRange(2, 1, values.length, 7).setValues(values);
+}
+
 function clearPreviousShiftAppRequests_(sheet, memberRow, name, dates) {
   var ss = SpreadsheetApp.openById(SHIFT_APP.spreadsheetId);
   var owner = ss.getSheetByName(SHIFT_APP.ownershipSheet);
@@ -105,7 +255,6 @@ function clearPreviousShiftAppRequests_(sheet, memberRow, name, dates) {
     owner.getRange(2, 7, statuses.length, 1).setValues(statuses);
   }
 
-  // 管理シート導入前にこのアプリから書き込まれた値も、提出ログを根拠に安全に置き換える。
   var log = ss.getSheetByName('希望休提出ログ');
   if (log && log.getLastRow() >= 2) {
     var rows = log.getRange(2, 1, log.getLastRow() - 1, 7).getDisplayValues();
@@ -150,14 +299,16 @@ function recordShiftAppOwnership_(targetSheet, name, written) {
   owner.getRange(owner.getLastRow() + 1, 1, rows.length, 7).setValues(rows);
 }
 
-function getShiftAppSheet_() {
-  var sheet = SpreadsheetApp.openById(SHIFT_APP.spreadsheetId).getSheetByName(SHIFT_APP.targetSheet);
-  if (!sheet) throw new Error('対象シート「' + SHIFT_APP.targetSheet + '」が見つかりません。');
+function getShiftAppSheet_(targetSheet) {
+  var name = targetSheet || SHIFT_APP.defaultSheet;
+  if (SHIFT_APP.monthSheets.indexOf(name) < 0) throw new Error('対象月を選び直してください。');
+  var sheet = SpreadsheetApp.openById(SHIFT_APP.spreadsheetId).getSheetByName(name);
+  if (!sheet) throw new Error('対象シート「' + name + '」が見つかりません。');
   return sheet;
 }
 
 function getShiftAppDates_(sheet) {
-  var ym = SHIFT_APP.targetSheet.replace('年', '/').replace('月', '').split('/');
+  var ym = sheet.getName().replace('年', '/').replace('月', '').split('/');
   var year = Number(ym[0]), month = Number(ym[1]);
   if (!year || !month) throw new Error('対象月の設定が見つかりません。');
   var width = sheet.getLastColumn(), found = null;
@@ -183,33 +334,6 @@ function getShiftAppDates_(sheet) {
     labels: found.map(function(x) { return x.label; }),
     columns: columns
   };
-}
-
-function getShiftAppMembers_(sheet) {
-  var values = sheet.getRange(1, 3, sheet.getLastRow(), 2).getDisplayValues();
-  var seen = {}, members = [];
-  var excluded = ['入荷','出勤','人数','計画','会議','給食','ギフト','MTG','更新','営業日','規定','公休'];
-  values.forEach(function(row) {
-    row.forEach(function(value) {
-      var name = String(value || '').trim(), key = normalizeShiftAppName_(name);
-      if (!key || seen[key] || /^[0-9]/.test(name)) return;
-      for (var i = 0; i < excluded.length; i++) if (name.indexOf(excluded[i]) >= 0) return;
-      seen[key] = true;
-      members.push(name);
-    });
-  });
-  return members;
-}
-
-function findShiftAppMemberRow_(sheet, name) {
-  var target = normalizeShiftAppName_(name);
-  var values = sheet.getRange(1, 3, sheet.getLastRow(), 2).getDisplayValues();
-  for (var r = 0; r < values.length; r++) {
-    for (var c = 0; c < 2; c++) {
-      if (normalizeShiftAppName_(values[r][c]) === target) return r + 1;
-    }
-  }
-  return 0;
 }
 
 function shiftAppDateKey_(label) {

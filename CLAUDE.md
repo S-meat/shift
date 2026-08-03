@@ -2,8 +2,8 @@
 
 ## 現在の状態
 
-- 対象月: 2026年9月
-- 対象シート: `2026年9月`
+- 対象月: 2026年9月～2027年3月
+- 対象シート: `2026年9月`、`2026年10月`、`2026年11月`、`2026年12月`、`2027年1月`、`2027年2月`、`2027年3月`
 - スプレッドシートID: `1_jq2tl3Wfx61p-J3EvfeHOQwIh1B5Qo5KP8UCCfPnVQ`
 - Apps ScriptプロジェクトID: `1dxANl5b5x1W8Wk9hT_TUJ95v5Q-Zl__y6Pyb4lIYay77pDCOXYZ9X2Qa`
 - Apps Script公開URL: `https://script.google.com/macros/s/AKfycbzXu3o08Hjjo1KPSPAexQ8lfOjDRh8qz3YbAgbSiw4zUOPnN1dM94saxsCrNsTdB2GA/exec`
@@ -21,6 +21,9 @@
 7. 再提出時は `希望休アプリ管理` の有効データと提出ログを基準に、このアプリが以前書いた値だけを消して今回の内容へ置き換える。
 8. 「毎週同じ曜日」「期間をまとめて」で同じ時間を一括設定できる。
 9. 入力途中は月別のキーでブラウザの `localStorage` に自動保存し、送信成功後に消去する。
+10. 画面右上で申請月を選び、送信先シートを切り替える。
+11. ハンバーガーメニューの氏名管理は暗証番号で保護し、追加・削除・並び替えを全対象月へ同期する。
+12. 氏名の並び替え時は、既存の申請値と管理シートのセル番地も氏名に追従させる。
 
 ## UI方針
 
@@ -29,6 +32,7 @@
 - スマートフォン優先。操作説明は短くする。
 - SAIBOKUロゴは `assets/saiboku-logo.png` を再圧縮せず使用する。
 - マニュアルは `manual.html`。受付期間、操作、QRコード、Googleアカウント要否を変更した場合は同時に更新する。
+- 印刷配布用PDFは `output/pdf/shift-app-employee-guide.pdf`。
 
 ## 変更時の注意
 
@@ -43,6 +47,6 @@
 
 `node tests/app-api.test.js` で、旧日付の消去、有給の「有」反映、古い時間から新しい時間への置換を確認できる。
 
-## 9月以降の更新
+## 2027年4月以降の更新
 
-対象月と対象タブを変更する場合は `gas/AppApi.gs` の `SHIFT_APP.targetSheet` を更新し、Apps Scriptへ反映後に新バージョンをデプロイする。日付・氏名は対象シートから自動取得する。
+新しい月を追加する場合は、スプレッドシートへ月タブを作成し、`gas/AppApi.gs` の `SHIFT_APP.monthSheets` へタブ名を追加する。`希望休メンバー` の並び順と39名の登録上限を維持し、Apps Scriptへ反映後に新バージョンをデプロイする。

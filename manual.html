@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>希望休申請アプリ 使い方</title>
-  <meta name="description" content="製造部 希望休申請アプリの使い方マニュアル">
+  <title>製造部 1課 ミート 希望休申請 使い方</title>
+  <meta name="description" content="製造部 1課 ミート 希望休申請アプリの使い方マニュアル">
   <style>
     :root{--ink:#181818;--sub:#656565;--line:#d8d8d4;--paper:#fff;--soft:#f6f6f3;--blue:#4c7698;--red:#a9483e}
     *{box-sizing:border-box}
@@ -38,15 +38,15 @@
     .choice.paid .mark{background:var(--red)}
     .choice p{font-size:14px;color:var(--sub)}
     .qr-wrap{display:grid;grid-template-columns:220px 1fr;align-items:center;gap:28px;padding:22px;border:1px solid var(--line)}
-    #qrcode{width:200px;height:200px;padding:8px;border:1px solid var(--line);background:#fff}
-    #qrcode img,#qrcode canvas{display:block;width:100%!important;height:100%!important}
+    .qrcode{width:200px;height:200px;padding:8px;border:1px solid var(--line);background:#fff}
+    .qrcode img,.qrcode canvas{display:block;width:100%!important;height:100%!important}
     .url{overflow-wrap:anywhere;font-size:13px;color:var(--sub)}
     .note{padding:18px;border:1px solid var(--line);background:var(--soft)}
     .note strong{display:block;margin-bottom:4px}
     .small{font-size:13px;color:var(--sub)}
     footer{border-top:1px solid var(--line);padding:22px;text-align:center;color:var(--sub);font-size:12px}
     @media(max-width:620px){header{padding:13px 16px}header img{height:28px}main{padding-top:34px}.choices{grid-template-columns:1fr}.choice{min-height:0}.qr-wrap{grid-template-columns:1fr;justify-items:center;text-align:center}.step{grid-template-columns:42px 1fr;gap:10px}}
-    @media print{header a,.actions{display:none}main{padding:24px 0;width:92%}section{break-inside:avoid;margin-top:32px}.qr-wrap{grid-template-columns:180px 1fr}#qrcode{width:170px;height:170px}footer{padding:10px}}
+    @media print{header a,.actions{display:none}main{padding:24px 0;width:92%}section{break-inside:avoid;margin-top:32px}.qr-wrap{grid-template-columns:180px 1fr}.qrcode{width:170px;height:170px}footer{padding:10px}}
   </style>
 </head>
 <body>
@@ -56,22 +56,24 @@
   </header>
 
   <main>
-    <p class="kicker">製造部｜2026年9月シフト</p>
+    <p class="kicker">製造部 1課 ミート｜2026年9月～2027年3月</p>
     <h1>希望休申請アプリ<br>使い方</h1>
     <p class="lead">スマートフォンで、希望休・時間指定・有給をカレンダーから申請できます。</p>
-    <div class="notice">受付期間：2026年8月7日（金）～8月15日（土）</div>
+    <div class="notice">画面右上で申請する月を選び、月を確認してから入力してください。</div>
     <div class="actions">
       <a class="button" href="index.html">アプリを開く</a>
+      <a class="button secondary" href="output/pdf/shift-app-employee-guide.pdf">配布用PDFを開く</a>
       <button class="button secondary" type="button" onclick="window.print()">印刷する</button>
     </div>
 
     <section>
       <div class="section-head"><span class="section-no">01</span><h2>基本の使い方</h2></div>
       <div class="steps">
-        <article class="step"><span class="step-no">1</span><div><h3>氏名を選ぶ</h3><p>画面上部の「氏名」をタップし、自分の名前を選択します。</p></div></article>
-        <article class="step"><span class="step-no">2</span><div><h3>希望する日を選ぶ</h3><p>カレンダーの日付をタップします。希望休は1回、時間指定・有給はすばやく2回タップします。</p></div></article>
-        <article class="step"><span class="step-no">3</span><div><h3>表示を確認する</h3><p>希望休は「希」、時間指定は「時間」、有給は「有」と表示されます。複数日を続けて選べます。</p></div></article>
-        <article class="step"><span class="step-no">4</span><div><h3>提出する</h3><p>必要なら備考を入力し、「この内容で提出する」をタップします。「送信しました」と表示されたら完了です。</p></div></article>
+        <article class="step"><span class="step-no">1</span><div><h3>月を選ぶ</h3><p>画面右上から申請する月を選びます。2026年9月から2027年3月まで選択できます。</p></div></article>
+        <article class="step"><span class="step-no">2</span><div><h3>氏名を選ぶ</h3><p>「基本情報」の氏名欄をタップし、自分の名前を選択します。</p></div></article>
+        <article class="step"><span class="step-no">3</span><div><h3>希望する日を選ぶ</h3><p>カレンダーの日付をタップします。希望休は1回、時間指定・有給はすばやく2回タップします。</p></div></article>
+        <article class="step"><span class="step-no">4</span><div><h3>表示を確認する</h3><p>希望休は「希」、時間指定は「時間」、有給は「有」と表示されます。複数日を続けて選べます。</p></div></article>
+        <article class="step"><span class="step-no">5</span><div><h3>提出する</h3><p>必要なら備考を入力し、「この内容で提出する」をタップします。「送信しました」と表示されたら完了です。</p></div></article>
       </div>
       <div class="note" style="margin-top:18px"><strong>途中でやめても大丈夫です</strong>入力内容は、そのスマートフォンまたはパソコンに自動保存されます。同じ端末・同じブラウザで開くと、続きから入力できます。</div>
     </section>
@@ -104,7 +106,7 @@
     <section>
       <div class="section-head"><span class="section-no">04</span><h2>アプリのQRコード</h2></div>
       <div class="qr-wrap">
-        <div id="qrcode" aria-label="希望休申請アプリのQRコード"></div>
+        <div id="qrcode" class="qrcode" aria-label="希望休申請アプリのQRコード"></div>
         <div>
           <h3>スマートフォンのカメラで読み取る</h3>
           <p>QRコードを読み取ると、希望休申請アプリが開きます。</p>
@@ -115,19 +117,35 @@
     </section>
 
     <section>
-      <div class="section-head"><span class="section-no">05</span><h2>Googleアカウントについて</h2></div>
+      <div class="section-head"><span class="section-no">05</span><h2>シフトを見る</h2></div>
+      <div class="qr-wrap">
+        <div id="sheetQr" class="qrcode" aria-label="シフト表のQRコード"></div>
+        <div><h3>シフト表（閲覧用）</h3><p>パート・アルバイトの方は閲覧のみです。編集できるのは管理者が指定したメンバーだけです。</p><a class="url" href="https://docs.google.com/spreadsheets/d/1_jq2tl3Wfx61p-J3EvfeHOQwIh1B5Qo5KP8UCCfPnVQ/edit">シフト表を開く</a></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head"><span class="section-no">06</span><h2>Googleアカウントについて</h2></div>
       <div class="note">
-        <strong>通常はGoogleアカウントを作成する必要はありません。</strong>
-        このアプリは、配布されたURLまたはQRコードから開いて利用できます。ログインを求める画面が表示された場合は、無理に新しいアカウントを作らず、管理担当者へ連絡してください。
+        <strong>希望休申請だけなら、通常は作成不要です。</strong>
+        シフト表の閲覧でGoogleアカウントが必要な場合は、<a href="https://accounts.google.com/signup">Googleアカウント作成ページ</a>を開き、「アカウントを作成」→「自分用」の順で進めます。作成したメールアドレスを管理者へ伝え、閲覧権限を付けてもらってください。会社指定のアカウントがある場合は、新しく作らず、そのアカウントを使います。
       </div>
     </section>
   </main>
 
-  <footer>製造部 希望休申請アプリ｜2026年8月作成</footer>
+  <footer>製造部 1課 ミート 希望休申請アプリ｜2026年8月更新</footer>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script>
     new QRCode(document.getElementById('qrcode'), {
       text: 'https://s-meat.github.io/shift/',
+      width: 184,
+      height: 184,
+      colorDark: '#181818',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    new QRCode(document.getElementById('sheetQr'), {
+      text: 'https://docs.google.com/spreadsheets/d/1_jq2tl3Wfx61p-J3EvfeHOQwIh1B5Qo5KP8UCCfPnVQ/edit',
       width: 184,
       height: 184,
       colorDark: '#181818',
