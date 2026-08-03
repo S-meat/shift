@@ -5,6 +5,7 @@
 ## 公開先
 
 - GitHub Pages: https://s-meat.github.io/shift/
+- 使い方マニュアル: https://s-meat.github.io/shift/manual.html
 - Apps Script直接URL: https://script.google.com/macros/s/AKfycbzXu3o08Hjjo1KPSPAexQ8lfOjDRh8qz3YbAgbSiw4zUOPnN1dM94saxsCrNsTdB2GA/exec
 
 ## 操作
@@ -17,6 +18,7 @@
 ## 構成
 
 - `index.html`: GitHub Pagesの公開入口。Apps Script版を全画面表示する。
+- `manual.html`: 操作方法、QRコード、Googleアカウント要否をまとめた配布用マニュアル。
 - `assets/saiboku-logo.png`: 元画像を無加工・無圧縮で配置。
 - `gas/`: Apps Script側のソース控え。
 - `CLAUDE.md`: Claude Code / Codex向けの引継ぎ。
