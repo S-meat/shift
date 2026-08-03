@@ -25,9 +25,10 @@
 ## 構成
 
 - `index.html`: GitHub Pagesの公開入口。Apps Script版を全画面表示する。
-- `manual.html`: 操作方法、QRコード、Googleアカウント要否をまとめた配布用マニュアル。
+- `manual.html`: 実際の申請画面を見ながら操作できる、QRコード・Googleアカウント・ホーム画面追加つきマニュアル。
 - `manifest.webmanifest`: iPhone・Androidのホーム画面アイコンとアプリ表示設定。
-- `output/pdf/shift-app-employee-guide.pdf`: A4印刷用の従業員向けガイド。
+- `output/manual/`: 公開中のアプリ画面を掲載するための手順書用画像。
+- `output/pdf/shift-app-employee-guide.pdf`: 実画面つき4ページ構成のA4印刷用従業員ガイド。
 - Slack通知はApps Scriptのスクリプトプロパティ `SHIFT_APP_SLACK_WEBHOOK_URL` に、`#888-シフト確認_休み希望提出` 用のIncoming Webhook URLを設定します。
 - `assets/saiboku-logo.png`: 元画像を無加工・無圧縮で配置。
 - `gas/`: Apps Script側のソース控え。

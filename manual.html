@@ -31,6 +31,14 @@
     h3{font-size:16px;margin:0 0 7px}
     p{margin:0 0 10px}
     .steps{display:grid;gap:18px}
+    .screen-grid{display:grid;grid-template-columns:minmax(260px,.9fr) 1.1fr;gap:28px;align-items:start}
+    .screen-shot{margin:0;padding:10px;border:1px solid var(--line);background:var(--soft)}
+    .screen-shot img{display:block;width:100%;height:auto;border:1px solid var(--line);background:#fff}
+    .screen-shot figcaption{margin-top:8px;color:var(--sub);font-size:12px;line-height:1.55}
+    .screen-detail{display:grid;grid-template-columns:minmax(220px,.8fr) 1.2fr;gap:24px;align-items:center;margin-top:22px;padding:20px;border:1px solid var(--line)}
+    .screen-detail img{display:block;width:100%;max-height:540px;object-fit:contain;object-position:top;border:1px solid var(--line)}
+    .screen-detail ol{margin:8px 0 0;padding-left:1.4em}
+    .screen-detail li{margin:10px 0}
     .step{display:grid;grid-template-columns:48px 1fr;gap:14px;padding:18px 0;border-bottom:1px solid var(--line)}
     .step:last-child{border-bottom:0}
     .step-no{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:var(--ink);color:#fff;font-weight:800}
@@ -51,11 +59,14 @@
     .device{border:1px solid var(--line);padding:20px}
     .device ol{margin:10px 0 0;padding-left:1.4em}
     .device li{margin:6px 0}
+    .icon-preview{display:flex;align-items:center;gap:18px;margin:0 0 18px;padding:14px 18px;border:1px solid var(--line);background:var(--soft)}
+    .icon-preview img{width:86px;height:86px;border-radius:18px}
+    .icon-preview p{margin:0}
     .small{font-size:13px;color:var(--sub)}
     footer{border-top:1px solid var(--line);padding:22px;text-align:center;color:var(--sub);font-size:12px}
-    @media(max-width:620px){header{padding:13px 16px}header img{height:28px}main{padding-top:34px}.choices,.devices{grid-template-columns:1fr}.choice{min-height:0}.qr-wrap{grid-template-columns:1fr;justify-items:center;text-align:center}.step{grid-template-columns:42px 1fr;gap:10px}}
+    @media(max-width:620px){header{padding:13px 16px}header img{height:28px}main{padding-top:34px}.choices,.devices,.screen-grid,.screen-detail{grid-template-columns:1fr}.choice{min-height:0}.qr-wrap{grid-template-columns:1fr;justify-items:center;text-align:center}.step{grid-template-columns:42px 1fr;gap:10px}}
     @page{size:A4;margin:12mm}
-    @media print{header a,.actions{display:none}main{padding:24px 0;width:92%}section{break-inside:avoid;margin-top:32px}.qr-wrap{grid-template-columns:180px 1fr}.qrcode{width:170px;height:170px}footer{padding:10px}}
+    @media print{header a,.actions{display:none}main{padding:24px 0;width:92%}section{break-inside:avoid;margin-top:32px}.screen-grid{grid-template-columns:43% 57%;gap:18px}.screen-detail{grid-template-columns:38% 62%;gap:16px}.qr-wrap{grid-template-columns:180px 1fr}.qrcode{width:170px;height:170px}footer{padding:10px}}
   </style>
 </head>
 <body>
@@ -77,12 +88,18 @@
 
     <section>
       <div class="section-head"><span class="section-no">01</span><h2>基本の使い方</h2></div>
-      <div class="steps">
-        <article class="step"><span class="step-no">1</span><div><h3>月を選ぶ</h3><p>画面右上から申請する月を選びます。2026年9月から2027年3月まで選択できます。</p></div></article>
-        <article class="step"><span class="step-no">2</span><div><h3>氏名を選ぶ</h3><p>「基本情報」の氏名欄をタップし、自分の名前を選択します。</p></div></article>
-        <article class="step"><span class="step-no">3</span><div><h3>希望する日を選ぶ</h3><p>カレンダーの日付をタップします。希望休は1回、時間指定・有給はすばやく2回タップします。</p></div></article>
-        <article class="step"><span class="step-no">4</span><div><h3>表示を確認する</h3><p>希望休は「希」、時間指定は「時間」、有給は「有」と表示されます。複数日を続けて選べます。</p></div></article>
-        <article class="step"><span class="step-no">5</span><div><h3>提出する</h3><p>必要なら備考を入力し、「この内容で提出する」をタップします。「送信しました」と表示されたら完了です。</p></div></article>
+      <div class="screen-grid">
+        <figure class="screen-shot">
+          <img src="output/manual/app-main-latest.png" alt="希望休申請アプリの実際の画面">
+          <figcaption>実際の申請画面です。上から「月・氏名」「カレンダー」「まとめて設定」「備考・提出」の順に操作します。</figcaption>
+        </figure>
+        <div class="steps">
+          <article class="step"><span class="step-no">1</span><div><h3>月を選ぶ</h3><p>画面右上から申請する月を選びます。2026年9月から2027年3月まで選択できます。</p></div></article>
+          <article class="step"><span class="step-no">2</span><div><h3>氏名を選ぶ</h3><p>「基本情報」の氏名欄をタップし、自分の名前を選択します。</p></div></article>
+          <article class="step"><span class="step-no">3</span><div><h3>希望する日を選ぶ</h3><p>カレンダーの日付をタップします。希望休は1回、時間指定・有給はすばやく2回タップします。</p></div></article>
+          <article class="step"><span class="step-no">4</span><div><h3>表示を確認する</h3><p>希望休は「希」、時間指定は「時間」、有給は「有」と表示されます。複数日を続けて選べます。</p></div></article>
+          <article class="step"><span class="step-no">5</span><div><h3>提出する</h3><p>必要なら備考を入力し、「この内容で提出する」をタップします。「送信しました」と表示されたら完了です。</p></div></article>
+        </div>
       </div>
       <div class="note" style="margin-top:18px"><strong>途中でやめても大丈夫です</strong>入力内容は、そのスマートフォンまたはパソコンに自動保存されます。同じ端末・同じブラウザで開くと、続きから入力できます。</div>
     </section>
@@ -93,6 +110,18 @@
         <article class="choice"><span class="mark">希</span><h3>希望休</h3><p>日付を1回タップ。もう一度タップすると、その日の選択を解除できます。</p></article>
         <article class="choice time"><span class="mark">時間</span><h3>時間指定</h3><p>日付をすばやく2回タップ。「時間指定」を選び、開始または終了時刻を入力して保存します。</p></article>
         <article class="choice paid"><span class="mark">有</span><h3>有給</h3><p>日付をすばやく2回タップ。ポップアップの「有給」を選び、保存します。シフト表には「有」と反映されます。</p></article>
+      </div>
+      <div class="screen-detail">
+        <img src="output/manual/app-time-paid.png" alt="時間指定と有給を選ぶ実際の画面">
+        <div>
+          <h3>時間指定・有給の画面</h3>
+          <ol>
+            <li>設定したい日を、すばやく2回タップします。</li>
+            <li>上の「時間指定」または「有給」を選びます。</li>
+            <li>時間指定は開始時刻・終了時刻のどちらか一方だけでも入力できます。</li>
+            <li>「保存」をタップし、カレンダーに「時間」または「有」と出れば設定完了です。</li>
+          </ol>
+        </div>
       </div>
       <div class="note" style="margin-top:18px">
         <strong>希望休や時間をまとめて設定できます</strong>
@@ -128,6 +157,7 @@
     <section>
       <div class="section-head"><span class="section-no">05</span><h2>ホーム画面に追加する</h2></div>
       <p class="small" style="margin-bottom:14px">最初に一度だけ設定すると、次回からホーム画面のアイコンをタップしてアプリを開けます。</p>
+      <div class="icon-preview"><img src="assets/app-icon-180.png" alt="シフトアプリのホーム画面アイコン"><p><strong>追加後は、この「シフト」アイコンが表示されます。</strong><br><span class="small">以前のアイコンが残る場合は、一度削除してから追加し直してください。</span></p></div>
       <div class="devices">
         <article class="device">
           <h3>iPhone（Safari）</h3>

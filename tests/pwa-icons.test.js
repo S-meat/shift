@@ -12,6 +12,10 @@ for (const html of [appHtml, manualHtml]) {
 
 assert.equal(manifest.start_url, './');
 assert.equal(manifest.display, 'standalone');
+assert.ok(manualHtml.includes('output/manual/app-main-latest.png'));
+assert.ok(manualHtml.includes('output/manual/app-time-paid.png'));
+assert.ok(fs.existsSync('output/manual/app-main-latest.png'));
+assert.ok(fs.existsSync('output/manual/app-time-paid.png'));
 assert.ok(manifest.icons.some((icon) => icon.sizes === '192x192' && icon.purpose === 'any'));
 assert.ok(manifest.icons.some((icon) => icon.sizes === '512x512' && icon.purpose === 'any'));
 assert.ok(manifest.icons.some((icon) => icon.sizes === '512x512' && icon.purpose === 'maskable'));
