@@ -26,6 +26,7 @@
 
 - `index.html`: GitHub Pagesの公開入口。Apps Script版を全画面表示する。
 - `manual.html`: 操作方法、QRコード、Googleアカウント要否をまとめた配布用マニュアル。
+- `manifest.webmanifest`: iPhone・Androidのホーム画面アイコンとアプリ表示設定。
 - `output/pdf/shift-app-employee-guide.pdf`: A4印刷用の従業員向けガイド。
 - `assets/saiboku-logo.png`: 元画像を無加工・無圧縮で配置。
 - `gas/`: Apps Script側のソース控え。
