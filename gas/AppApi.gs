@@ -8,6 +8,7 @@ var SHIFT_APP = {
   monthSheets: ['2026年9月', '2026年10月', '2026年11月', '2026年12月', '2027年1月', '2027年2月', '2027年3月'],
   memberSheet: '希望休メンバー',
   ownershipSheet: '希望休アプリ管理',
+  draftSheet: '希望休入力途中保存',
   memberRows: [8,9,10,11,12,13,14,15,16,17,19,20,21,22,28,29,30,31,32,33,34,36,37,38,39,40,41,44,45,46,47,48,49,51,52,53,55,56,57],
   leaveMark: '希', paidMark: '有',
   leaveColor: '#fff2cc', paidColor: '#f4cccc', timeColor: '#cfe2f3'
@@ -86,6 +87,7 @@ function submitShiftAppRequest(payload) {
     });
 
     recordShiftAppOwnership_(sheet.getName(), payload.name, written);
+    completeShiftAppDraft_(sheet.getName(), payload.name);
     var slackNotification = notifyShiftSubmissionToSlack_(payload.name, sheet.getName());
     appendShiftAppLog_(payload, sheet.getName(), results, slackNotification.status);
     return {
@@ -96,6 +98,99 @@ function submitShiftAppRequest(payload) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function saveShiftAppDraft(payload) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    if (!payload || !payload.name) throw new Error('先に氏名を選択してください。');
+    var sheet = getShiftAppSheet_(payload.targetSheet);
+    if (!findShiftAppMemberRow_(payload.name)) throw new Error('登録済みの氏名が見つかりません。');
+    var dates = getShiftAppDates_(sheet);
+    var allowed = {};
+    dates.labels.forEach(function(label) { allowed[label] = true; });
+    var selections = {};
+    Object.keys(payload.selections || {}).forEach(function(label) {
+      if (!allowed[label]) return;
+      var item = payload.selections[label] || {};
+      if (item.kind === 'leave' || item.kind === 'paid') {
+        selections[label] = { kind: item.kind };
+      } else if (item.kind === 'time') {
+        var start = normalizeShiftAppTime_(item.start);
+        var end = normalizeShiftAppTime_(item.end);
+        if (start || end) selections[label] = { kind: 'time', start: start, end: end };
+      }
+    });
+    var savedAt = new Date();
+    var record = {
+      target: sheet.getName(),
+      name: String(payload.name).trim(),
+      note: String(payload.note || '').substring(0, 1000),
+      selections: selections,
+      savedAt: savedAt.getTime()
+    };
+    var draftSheet = ensureShiftAppDraftSheet_();
+    var row = findShiftAppDraftRow_(draftSheet, record.target, record.name);
+    var values = [[savedAt, record.target, record.name, JSON.stringify(record), '保存中']];
+    if (row) draftSheet.getRange(row, 1, 1, 5).setValues(values);
+    else draftSheet.getRange(draftSheet.getLastRow() + 1, 1, 1, 5).setValues(values);
+    return { ok: true, message: '入力内容を保存しました。アプリを閉じても、同じ月と氏名を選ぶと続きから再開できます。', savedAt: record.savedAt };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getShiftAppDraft(targetSheet, name) {
+  var memberName = String(name || '').trim();
+  if (!memberName) return { found: false };
+  var sheet = getShiftAppSheet_(targetSheet);
+  if (!findShiftAppMemberRow_(memberName)) return { found: false };
+  var ss = SpreadsheetApp.openById(SHIFT_APP.spreadsheetId);
+  var draftSheet = ss.getSheetByName(SHIFT_APP.draftSheet);
+  if (!draftSheet || draftSheet.getLastRow() < 2) return { found: false };
+  var row = findShiftAppDraftRow_(draftSheet, sheet.getName(), memberName);
+  if (!row) return { found: false };
+  var values = draftSheet.getRange(row, 1, 1, 5).getDisplayValues()[0];
+  if (values[4] !== '保存中') return { found: false };
+  try {
+    var draft = JSON.parse(values[3] || '{}');
+    if (draft.target !== sheet.getName() || normalizeShiftAppName_(draft.name) !== normalizeShiftAppName_(memberName)) return { found: false };
+    return { found: true, draft: draft };
+  } catch (error) {
+    return { found: false };
+  }
+}
+
+function ensureShiftAppDraftSheet_() {
+  var ss = SpreadsheetApp.openById(SHIFT_APP.spreadsheetId);
+  var sheet = ss.getSheetByName(SHIFT_APP.draftSheet);
+  if (sheet) return sheet;
+  sheet = ss.insertSheet(SHIFT_APP.draftSheet);
+  sheet.appendRow(['更新日時','対象タブ','氏名','下書きJSON','状態']);
+  sheet.setFrozenRows(1);
+  sheet.hideSheet();
+  return sheet;
+}
+
+function findShiftAppDraftRow_(sheet, targetSheet, name) {
+  if (!sheet || sheet.getLastRow() < 2) return 0;
+  var targetName = normalizeShiftAppName_(name);
+  var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 5).getDisplayValues();
+  for (var i = values.length - 1; i >= 0; i--) {
+    if (values[i][1] === targetSheet && normalizeShiftAppName_(values[i][2]) === targetName) return i + 2;
+  }
+  return 0;
+}
+
+function completeShiftAppDraft_(targetSheet, name) {
+  var ss = SpreadsheetApp.openById(SHIFT_APP.spreadsheetId);
+  var sheet = ss.getSheetByName(SHIFT_APP.draftSheet);
+  var row = findShiftAppDraftRow_(sheet, targetSheet, name);
+  if (!row) return;
+  var values = sheet.getRange(row, 1, 1, 5).getValues();
+  values[0][4] = '提出済み';
+  sheet.getRange(row, 1, 1, 5).setValues(values);
 }
 
 function verifyShiftAppAdmin(pin) {

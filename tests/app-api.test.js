@@ -161,4 +161,27 @@ assert.deepEqual(
   '空白差の重複氏名を除外すること'
 );
 
+const savedDraft = context.saveShiftAppDraft({
+  targetSheet: '2026年9月',
+  name: 'テスト 太郎',
+  note: 'あとで続きを入力',
+  selections: {
+    '9/1(火)': { kind: 'leave' },
+    '9/2(水)': { kind: 'time', start: '08:30', end: '15:00' },
+    '10/1(木)': { kind: 'paid' }
+  }
+});
+assert.equal(savedDraft.ok, true, '入力途中の内容を保存できること');
+const restoredDraft = context.getShiftAppDraft('2026年9月', 'テスト 太郎');
+assert.equal(restoredDraft.found, true, '氏名と月から保存内容を復元できること');
+assert.equal(restoredDraft.draft.note, 'あとで続きを入力');
+assert.equal(restoredDraft.draft.selections['9/1(火)'].kind, 'leave');
+assert.equal(restoredDraft.draft.selections['9/2(水)'].start, '8:30');
+assert.equal(restoredDraft.draft.selections['10/1(木)'], undefined, '対象月以外の日付を保存しないこと');
+
+context.submitShiftAppRequest({
+  targetSheet: '2026年9月', name: 'テスト 太郎', leaveDates: ['9/1(火)'], timeRequests: []
+});
+assert.equal(context.getShiftAppDraft('2026年9月', 'テスト 太郎').found, false, '提出後は途中保存を復元しないこと');
+
 console.log('App API replacement tests passed');
