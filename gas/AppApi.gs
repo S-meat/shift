@@ -306,8 +306,16 @@ function findShiftAppMemberRow_(name) {
 }
 
 function syncShiftAppRosterToSheet_(sheet, oldNames, newNames, pairs) {
-  var startColumn = 5;
-  var width = 31;
+  var dates = getShiftAppDates_(sheet);
+  var dateColumns = Object.keys(dates.columns).map(function(key) {
+    return dates.columns[key];
+  }).sort(function(a, b) { return a - b; });
+  if (!dateColumns.length) throw new Error(sheet.getName() + 'の日付列を確認できません。');
+  var startColumn = dateColumns[0];
+  var width = dateColumns[dateColumns.length - 1] - startColumn + 1;
+  if (width !== dateColumns.length) {
+    throw new Error(sheet.getName() + 'の日付列が連続していません。');
+  }
   var saved = {};
   oldNames.forEach(function(name, index) {
     var row = SHIFT_APP.memberRows[index];

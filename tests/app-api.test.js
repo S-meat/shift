@@ -244,9 +244,18 @@ class GridSheet {
 }
 
 const rosterSheet = new GridSheet('2026年9月');
-rosterSheet.getRange(context.SHIFT_APP.memberRows[0], 5, 1, 3).setValues([['A1', 'A2', 'A3']]);
-rosterSheet.getRange(context.SHIFT_APP.memberRows[1], 5, 1, 3).setValues([['B1', 'B2', 'B3']]);
-rosterSheet.getRange(context.SHIFT_APP.memberRows[2], 5, 1, 3).setValues([['C1', 'C2', 'C3']]);
+const originalGetShiftAppDates = context.getShiftAppDates_;
+context.getShiftAppDates_ = function() {
+  const columns = {};
+  for (let day = 1; day <= 30; day++) columns['9/' + day] = 8 + day;
+  return { columns };
+};
+rosterSheet.getRange(context.SHIFT_APP.memberRows[0], 9, 1, 3).setValues([['A1', 'A2', 'A3']]);
+rosterSheet.getRange(context.SHIFT_APP.memberRows[1], 9, 1, 3).setValues([['B1', 'B2', 'B3']]);
+rosterSheet.getRange(context.SHIFT_APP.memberRows[2], 9, 1, 3).setValues([['C1', 'C2', 'C3']]);
+rosterSheet.getRange(context.SHIFT_APP.memberRows[0], 38, 1, 1).setValues([['A30']]);
+rosterSheet.getRange(context.SHIFT_APP.memberRows[1], 38, 1, 1).setValues([['B30']]);
+rosterSheet.getRange(context.SHIFT_APP.memberRows[2], 38, 1, 1).setValues([['C30']]);
 
 const oldRosterNames = ['太郎', '次郎', '三郎'];
 const newRosterNames = ['太郎(改)', '三郎'];
@@ -254,17 +263,26 @@ const rosterPairs = [{ from: '太郎', to: '太郎(改)' }, { from: '三郎', to
 context.syncShiftAppRosterToSheet_(rosterSheet, oldRosterNames, newRosterNames, rosterPairs);
 
 assert.equal(
-  rosterSheet.getRange(context.SHIFT_APP.memberRows[0], 5, 1, 3).getValues()[0][0], 'A1',
+  rosterSheet.getRange(context.SHIFT_APP.memberRows[0], 9, 1, 3).getValues()[0][0], 'A1',
   '氏名の誤字修正（リネーム）をしても本人の入力内容が引き継がれること'
 );
 assert.equal(
-  rosterSheet.getRange(context.SHIFT_APP.memberRows[1], 5, 1, 3).getValues()[0][0], 'C1',
+  rosterSheet.getRange(context.SHIFT_APP.memberRows[1], 9, 1, 3).getValues()[0][0], 'C1',
   '間の氏名を削除して詰めても、後ろの人のデータが正しい行へ移ること'
+);
+assert.equal(
+  rosterSheet.getRange(context.SHIFT_APP.memberRows[0], 38, 1, 1).getValues()[0][0], 'A30',
+  '9月30日がAI列より後ろにあっても、リネーム後の本人へ引き継がれること'
+);
+assert.equal(
+  rosterSheet.getRange(context.SHIFT_APP.memberRows[1], 38, 1, 1).getValues()[0][0], 'C30',
+  '固定31列の外にある月末データも、並び替え後の本人へ引き継がれること'
 );
 assert.equal(
   rosterSheet.getRange(context.SHIFT_APP.memberRows[2], 3, 1, 1).getDisplayValue(), '',
   '削除された氏名の行は空欄に戻ること'
 );
+context.getShiftAppDates_ = originalGetShiftAppDates;
 
 assert.deepEqual(
   JSON.parse(JSON.stringify(context.sanitizeShiftAppMemberPairs_([{ from: '', to: ' 塚越　涼 ' }, { from: '塚越　涼', to: '塚越 涼' }, { from: '', to: '' }]))),
