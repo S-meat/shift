@@ -253,8 +253,11 @@ const originalGetShiftAppDates = context.getShiftAppDates_;
 context.getShiftAppDates_ = function() {
   const columns = {};
   for (let day = 1; day <= 30; day++) columns['9/' + day] = 8 + day;
-  return { columns };
+  return { columns, visibleColumns: Array.from({ length: 35 }, (_, index) => index + 4) };
 };
+rosterSheet.getRange(context.SHIFT_APP.memberRows[0], 4, 1, 1).setValues([['A前月']]);
+rosterSheet.getRange(context.SHIFT_APP.memberRows[1], 4, 1, 1).setValues([['B前月']]);
+rosterSheet.getRange(context.SHIFT_APP.memberRows[2], 4, 1, 1).setValues([['C前月']]);
 rosterSheet.getRange(context.SHIFT_APP.memberRows[0], 9, 1, 3).setValues([['A1', 'A2', 'A3']]);
 rosterSheet.getRange(context.SHIFT_APP.memberRows[1], 9, 1, 3).setValues([['B1', 'B2', 'B3']]);
 rosterSheet.getRange(context.SHIFT_APP.memberRows[2], 9, 1, 3).setValues([['C1', 'C2', 'C3']]);
@@ -282,6 +285,14 @@ assert.equal(
 assert.equal(
   rosterSheet.getRange(context.SHIFT_APP.memberRows[1], 38, 1, 1).getValues()[0][0], 'C30',
   '固定31列の外にある月末データも、並び替え後の本人へ引き継がれること'
+);
+assert.equal(
+  rosterSheet.getRange(context.SHIFT_APP.memberRows[0], 4, 1, 1).getValues()[0][0], 'A前月',
+  '氏名はC列だけへ書き、D列の前月表示データを上書きしないこと'
+);
+assert.equal(
+  rosterSheet.getRange(context.SHIFT_APP.memberRows[1], 4, 1, 1).getValues()[0][0], 'C前月',
+  '表示中の前月日付も並び替え後の本人へ追従すること'
 );
 assert.equal(
   rosterSheet.getRange(context.SHIFT_APP.memberRows[2], 3, 1, 1).getDisplayValue(), '',

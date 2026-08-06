@@ -307,9 +307,9 @@ function findShiftAppMemberRow_(name) {
 
 function syncShiftAppRosterToSheet_(sheet, oldNames, newNames, pairs) {
   var dates = getShiftAppDates_(sheet);
-  var dateColumns = Object.keys(dates.columns).map(function(key) {
+  var dateColumns = (dates.visibleColumns || Object.keys(dates.columns).map(function(key) {
     return dates.columns[key];
-  }).sort(function(a, b) { return a - b; });
+  })).slice().sort(function(a, b) { return a - b; });
   if (!dateColumns.length) throw new Error(sheet.getName() + 'の日付列を確認できません。');
   var startColumn = dateColumns[0];
   var width = dateColumns[dateColumns.length - 1] - startColumn + 1;
@@ -331,7 +331,7 @@ function syncShiftAppRosterToSheet_(sheet, oldNames, newNames, pairs) {
 
   SHIFT_APP.memberRows.forEach(function(row, index) {
     var name = newNames[index] || '';
-    sheet.getRange(row, 3, 1, 2).setValues([[name, name]]);
+    sheet.getRange(row, 3, 1, 1).setValues([[name]]);
     var range = sheet.getRange(row, startColumn, 1, width);
     range.clearContent().setBackground(null);
     var pair = pairs[index];
@@ -452,10 +452,11 @@ function getShiftAppDates_(sheet) {
   var ym = sheet.getName().replace('年', '/').replace('月', '').split('/');
   var year = Number(ym[0]), month = Number(ym[1]);
   if (!year || !month) throw new Error('対象月の設定が見つかりません。');
-  var width = sheet.getLastColumn(), found = null;
+  var width = sheet.getLastColumn(), found = null, visibleColumns = null;
   for (var r = 1; r <= Math.min(10, sheet.getLastRow()); r++) {
-    var values = sheet.getRange(r, 1, 1, width).getValues()[0], items = [];
+    var values = sheet.getRange(r, 1, 1, width).getValues()[0], items = [], allDateColumns = [];
     values.forEach(function(value, index) {
+      if (value instanceof Date) allDateColumns.push(index + 1);
       if (value instanceof Date && value.getFullYear() === year && value.getMonth() + 1 === month) {
         var key = month + '/' + value.getDate();
         items.push({
@@ -465,7 +466,7 @@ function getShiftAppDates_(sheet) {
         });
       }
     });
-    if (items.length >= 20) { found = items; break; }
+    if (items.length >= 20) { found = items; visibleColumns = allDateColumns; break; }
   }
   if (!found) throw new Error('シフト表の日付行を確認できません。');
   var columns = {};
@@ -473,7 +474,8 @@ function getShiftAppDates_(sheet) {
   return {
     period: year + '年' + month + '月',
     labels: found.map(function(x) { return x.label; }),
-    columns: columns
+    columns: columns,
+    visibleColumns: visibleColumns
   };
 }
 
