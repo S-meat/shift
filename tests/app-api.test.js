@@ -154,7 +154,12 @@ assert.equal(
   '提出者と対象月をSlack通知へ渡すこと'
 );
 assert.equal(context.SHIFT_APP.monthSheets.length, 7, '2026年9月から2027年3月まで設定されていること');
-assert.equal(context.SHIFT_APP.memberRows.length, 33, '集計行を除いた氏名欄33枠を維持すること');
+assert.equal(context.SHIFT_APP.memberRows.length, 32, '集計行を除いた氏名欄32枠を維持すること');
+assert.deepEqual(
+  JSON.parse(JSON.stringify(context.SHIFT_APP.memberRows)),
+  [8,9,10,11,12,13,15,16,17,18,24,25,26,27,28,30,31,32,33,34,35,36,37,40,41,42,43,44,45,47,48,49],
+  '小計・計画・合計行を氏名欄として扱わないこと'
+);
 assert.deepEqual(
   Array.from(context.sanitizeShiftAppMembers_([' 塚越　涼 ', '塚越 涼', '', '池上　和一'])),
   ['塚越　涼', '池上　和一'],
