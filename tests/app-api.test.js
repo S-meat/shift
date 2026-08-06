@@ -185,3 +185,105 @@ context.submitShiftAppRequest({
 assert.equal(context.getShiftAppDraft('2026年9月', 'テスト 太郎').found, false, '提出後は途中保存を復元しないこと');
 
 console.log('App API replacement tests passed');
+
+// --- Roster rename/reorder/deletion must not lose existing shift data ---
+class Grid {
+  constructor() { this.cells = {}; }
+  key(r, c) { return r + ':' + c; }
+  get(r, c) { return this.cells[this.key(r, c)] || { value: '', background: null, formula: '' }; }
+  set(r, c, patch) {
+    const k = this.key(r, c);
+    this.cells[k] = Object.assign({ value: '', background: null, formula: '' }, this.cells[k], patch);
+  }
+}
+class Range2 {
+  constructor(sheet, row, col, numRows, numCols) {
+    this.sheet = sheet; this.row = row; this.col = col;
+    this.numRows = numRows || 1; this.numCols = numCols || 1;
+  }
+  getA1Notation() { return columnLetters(this.col) + this.row; }
+  getRow() { return this.row; }
+  getDisplayValue() { return String(this.sheet.grid.get(this.row, this.col).value || ''); }
+  setValue(v) { this.sheet.grid.set(this.row, this.col, { value: v }); return this; }
+  setBackground(color) {
+    for (let c = 0; c < this.numCols; c++) this.sheet.grid.set(this.row, this.col + c, { background: color });
+    return this;
+  }
+  clearContent() {
+    for (let c = 0; c < this.numCols; c++) this.sheet.grid.set(this.row, this.col + c, { value: '' });
+    return this;
+  }
+  getValues() {
+    const row = [];
+    for (let c = 0; c < this.numCols; c++) row.push(this.sheet.grid.get(this.row, this.col + c).value);
+    return [row];
+  }
+  getFormulas() {
+    const row = [];
+    for (let c = 0; c < this.numCols; c++) row.push(this.sheet.grid.get(this.row, this.col + c).formula || '');
+    return [row];
+  }
+  getBackgrounds() {
+    const row = [];
+    for (let c = 0; c < this.numCols; c++) row.push(this.sheet.grid.get(this.row, this.col + c).background || null);
+    return [row];
+  }
+  setValues(values) {
+    values[0].forEach((v, c) => this.sheet.grid.set(this.row, this.col + c, { value: v }));
+    return this;
+  }
+  setBackgrounds(bgs) {
+    bgs[0].forEach((v, c) => this.sheet.grid.set(this.row, this.col + c, { background: v }));
+    return this;
+  }
+}
+class GridSheet {
+  constructor(name) { this.name = name; this.grid = new Grid(); }
+  getName() { return this.name; }
+  getRange(row, col, numRows, numCols) { return new Range2(this, row, col, numRows, numCols); }
+}
+
+const rosterSheet = new GridSheet('2026年9月');
+rosterSheet.getRange(context.SHIFT_APP.memberRows[0], 5, 1, 3).setValues([['A1', 'A2', 'A3']]);
+rosterSheet.getRange(context.SHIFT_APP.memberRows[1], 5, 1, 3).setValues([['B1', 'B2', 'B3']]);
+rosterSheet.getRange(context.SHIFT_APP.memberRows[2], 5, 1, 3).setValues([['C1', 'C2', 'C3']]);
+
+const oldRosterNames = ['太郎', '次郎', '三郎'];
+const newRosterNames = ['太郎(改)', '三郎'];
+const rosterPairs = [{ from: '太郎', to: '太郎(改)' }, { from: '三郎', to: '三郎' }];
+context.syncShiftAppRosterToSheet_(rosterSheet, oldRosterNames, newRosterNames, rosterPairs);
+
+assert.equal(
+  rosterSheet.getRange(context.SHIFT_APP.memberRows[0], 5, 1, 3).getValues()[0][0], 'A1',
+  '氏名の誤字修正（リネーム）をしても本人の入力内容が引き継がれること'
+);
+assert.equal(
+  rosterSheet.getRange(context.SHIFT_APP.memberRows[1], 5, 1, 3).getValues()[0][0], 'C1',
+  '間の氏名を削除して詰めても、後ろの人のデータが正しい行へ移ること'
+);
+assert.equal(
+  rosterSheet.getRange(context.SHIFT_APP.memberRows[2], 3, 1, 1).getDisplayValue(), '',
+  '削除された氏名の行は空欄に戻ること'
+);
+
+assert.deepEqual(
+  JSON.parse(JSON.stringify(context.sanitizeShiftAppMemberPairs_([{ from: '', to: ' 塚越　涼 ' }, { from: '塚越　涼', to: '塚越 涼' }, { from: '', to: '' }]))),
+  [{ from: '', to: '塚越　涼' }],
+  '氏名ペアも空白差の重複を除外すること'
+);
+
+const ownershipSheet = new TableSheet();
+ownershipSheet.rows = [
+  ['更新日時', '対象タブ', '氏名', '日付', 'セル', '記入値', '状態'],
+  [new Date(), '2026年9月', '太郎', '9/1(火)', 'E8', '希', '有効'],
+  [new Date(), '2026年9月', '次郎', '9/2(水)', 'F9', '有', '有効'],
+  [new Date(), '2026年9月', '三郎', '9/3(木)', 'G10', '8:00～', '有効']
+];
+spreadsheet.sheets['希望休アプリ管理'] = ownershipSheet;
+context.updateShiftAppOwnershipRows_(newRosterNames, rosterPairs);
+assert.equal(ownershipSheet.rows[1][2], '太郎(改)', 'リネーム後の氏名へ提出履歴が追従すること');
+assert.equal(ownershipSheet.rows[1][4], 'E8', 'リネームした本人のセル番地を維持すること');
+assert.equal(ownershipSheet.rows[2][6], '氏名削除済み', '削除した氏名の提出履歴を無効化すること');
+assert.equal(ownershipSheet.rows[3][4], 'G9', '削除後に詰めた氏名のセル番地が新しい行へ追従すること');
+
+console.log('Roster rename/reorder/deletion tests passed');

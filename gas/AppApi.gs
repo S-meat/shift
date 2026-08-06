@@ -198,9 +198,9 @@ function verifyShiftAppAdmin(pin) {
   return getShiftAppAdminData_();
 }
 
-function saveShiftAppMembers(pin, names) {
+function saveShiftAppMembers(pin, pairs) {
   assertShiftAppAdmin_(pin);
-  var cleaned = sanitizeShiftAppMembers_(names);
+  var cleaned = sanitizeShiftAppMemberPairs_(pairs);
   if (!cleaned.length) throw new Error('氏名を1名以上登録してください。');
   if (cleaned.length > SHIFT_APP.memberRows.length) {
     throw new Error('登録できるのは最大' + SHIFT_APP.memberRows.length + '名です。');
@@ -209,12 +209,13 @@ function saveShiftAppMembers(pin, names) {
   lock.waitLock(30000);
   try {
     var oldNames = getShiftAppMembers_();
-    writeShiftAppMemberSheet_(cleaned);
+    var newNames = cleaned.map(function(pair) { return pair.to; });
+    writeShiftAppMemberSheet_(newNames);
     SHIFT_APP.monthSheets.forEach(function(sheetName) {
       var sheet = getShiftAppSheet_(sheetName);
-      syncShiftAppRosterToSheet_(sheet, oldNames, cleaned);
+      syncShiftAppRosterToSheet_(sheet, oldNames, newNames, cleaned);
     });
-    updateShiftAppOwnershipRows_(cleaned);
+    updateShiftAppOwnershipRows_(newNames, cleaned);
     return getShiftAppAdminData_();
   } finally {
     lock.releaseLock();
@@ -244,6 +245,19 @@ function sanitizeShiftAppMembers_(names) {
     if (!key || seen[key]) return;
     seen[key] = true;
     result.push(name);
+  });
+  return result;
+}
+
+function sanitizeShiftAppMemberPairs_(pairs) {
+  var seen = {}, result = [];
+  (pairs || []).forEach(function(pair) {
+    var to = String((pair && pair.to) || '').trim();
+    var from = pair && pair.from ? String(pair.from).trim() : '';
+    var key = normalizeShiftAppName_(to);
+    if (!key || seen[key]) return;
+    seen[key] = true;
+    result.push({ from: from, to: to });
   });
   return result;
 }
@@ -291,7 +305,7 @@ function findShiftAppMemberRow_(name) {
   return 0;
 }
 
-function syncShiftAppRosterToSheet_(sheet, oldNames, newNames) {
+function syncShiftAppRosterToSheet_(sheet, oldNames, newNames, pairs) {
   var startColumn = 5;
   var width = 31;
   var saved = {};
@@ -312,7 +326,9 @@ function syncShiftAppRosterToSheet_(sheet, oldNames, newNames) {
     sheet.getRange(row, 3, 1, 2).setValues([[name, name]]);
     var range = sheet.getRange(row, startColumn, 1, width);
     range.clearContent().setBackground(null);
-    var prior = saved[normalizeShiftAppName_(name)];
+    var pair = pairs[index];
+    var sourceName = pair && pair.from ? pair.from : name;
+    var prior = name && saved[normalizeShiftAppName_(sourceName)];
     if (name && prior) {
       range.setValues([prior.values]);
       range.setBackgrounds([prior.backgrounds]);
@@ -320,17 +336,28 @@ function syncShiftAppRosterToSheet_(sheet, oldNames, newNames) {
   });
 }
 
-function updateShiftAppOwnershipRows_(members) {
+function updateShiftAppOwnershipRows_(newNames, pairs) {
   var ss = SpreadsheetApp.openById(SHIFT_APP.spreadsheetId);
   var owner = ss.getSheetByName(SHIFT_APP.ownershipSheet);
   if (!owner || owner.getLastRow() < 2) return;
   var values = owner.getRange(2, 1, owner.getLastRow() - 1, 7).getValues();
   var rowByName = {};
-  members.forEach(function(name, index) { rowByName[normalizeShiftAppName_(name)] = SHIFT_APP.memberRows[index]; });
+  newNames.forEach(function(name, index) { rowByName[normalizeShiftAppName_(name)] = SHIFT_APP.memberRows[index]; });
+  var renameByOldName = {};
+  pairs.forEach(function(pair, index) {
+    if (!pair.from) return;
+    var fromKey = normalizeShiftAppName_(pair.from);
+    if (fromKey !== normalizeShiftAppName_(pair.to)) {
+      renameByOldName[fromKey] = { name: pair.to, row: SHIFT_APP.memberRows[index] };
+    }
+  });
   values.forEach(function(row) {
     if (row[6] !== '有効') return;
-    var newRow = rowByName[normalizeShiftAppName_(row[2])];
+    var oldKey = normalizeShiftAppName_(row[2]);
+    var renamed = renameByOldName[oldKey];
+    var newRow = renamed ? renamed.row : rowByName[oldKey];
     if (!newRow) { row[6] = '氏名削除済み'; return; }
+    if (renamed) row[2] = renamed.name;
     row[4] = String(row[4] || '').replace(/\d+$/, String(newRow));
   });
   owner.getRange(2, 1, values.length, 7).setValues(values);

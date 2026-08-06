@@ -11,5 +11,7 @@ assert.ok(html.includes("type==='leave'?{kind:'leave'}"), '選択した曜日へ
 assert.ok(html.includes('id="saveDraftButton"'), '入力内容を保存するボタンがあること');
 assert.ok(html.includes('.saveShiftAppDraft(draftPayload())'), '保存ボタンからサーバー保存を呼び出すこと');
 assert.ok(html.includes('.getShiftAppDraft(target,name)'), '氏名と月から保存内容を復元すること');
+assert.ok(html.includes('row.dataset.from=entry.from'), '氏名編集前の名前を行に保持すること');
+assert.ok(html.includes('return{from:entry.from,to:entry.value}'), '変更前後の氏名ペアをサーバーへ送ること');
 
 console.log('Shift app UI syntax checks passed');
